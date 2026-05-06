@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import io
 import os
-import secrets
 import tempfile
 import zipfile
 from pathlib import Path
@@ -17,7 +16,6 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 
 from scrape import scrape_one, slugify
 
-ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN", "")
 MAX_PHOTOS_CAP = int(os.environ.get("MAX_PHOTOS_CAP", "60"))
 
 app = FastAPI(title="GMaps Image Scraper")
@@ -54,8 +52,6 @@ button:disabled { background:#2a2f38; cursor:wait; }
   <input name="query" required placeholder="joe's pizza brooklyn" autofocus>
   <label>Max photos (1–{cap})</label>
   <input name="max_photos" type="number" min="1" max="{cap}" value="30">
-  <label>Access token</label>
-  <input name="token" type="password" required>
   <button type="submit" id="btn">Scrape</button>
   <div class="err" id="err">{err}</div>
 </form>
@@ -85,10 +81,7 @@ async def scrape_endpoint(
     request: Request,
     query: str = Form(...),
     max_photos: int = Form(30),
-    token: str = Form(...),
 ) -> StreamingResponse:
-    if not ACCESS_TOKEN or not secrets.compare_digest(token, ACCESS_TOKEN):
-        raise HTTPException(status_code=401, detail="invalid token")
     max_photos = max(1, min(int(max_photos), MAX_PHOTOS_CAP))
 
     with tempfile.TemporaryDirectory() as td:
